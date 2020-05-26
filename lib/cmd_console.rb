@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative './cmd_console/forwardable'
+require_relative './cmd_console/last_exception'
 
 require_relative './cmd_console/helpers/base_helpers'
 require_relative './cmd_console/helpers/documentation_helpers'

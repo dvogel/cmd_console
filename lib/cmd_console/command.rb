@@ -275,11 +275,6 @@ class CmdConsole
       pry_instance
     end
 
-    # @return [Object] The value of `self` inside the `target` binding.
-    def target_self
-      target.eval('self')
-    end
-
     # @return [Hash] CmdConsole commands can store arbitrary state
     #   here. This state persists between subsequent command invocations.
     #   All state saved here is unique to the command, it does not

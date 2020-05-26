@@ -434,6 +434,7 @@ class CmdConsole
     @suppress_output = false
     begin
       unless process_command_safely(line)
+        output.puts "No matching command for: #{line}"
         @eval_string += "#{line.chomp}\n" if !line.empty? || !@eval_string.empty?
       end
     rescue RescuableException => e
