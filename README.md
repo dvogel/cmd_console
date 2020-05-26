@@ -45,7 +45,7 @@ Overview
 
 CmdConsole is fairly flexible. It is trivial to read from any object that has a
 `readline` method and write to any object that has a `puts` method. Many other
-aspects of Pry are also configurable, making it a good choice for implementing
+aspects of CmdConsole are also configurable, making it a good choice for implementing
 custom shells.
 
 ### Commands
@@ -53,18 +53,14 @@ custom shells.
 Nearly every piece of functionality in a CmdConsole session is implemented as a
 command. Commands are not methods and must start at the beginning of a line,
 with no whitespace in between. Commands support a flexible syntax and allow
-'options' in the same way as shell commands, for example the following Pry
-command will show a list of all private instance methods (in scope) that begin
-with 'pa'
+'options' in the same way as shell commands.
 
 
 ### Live Help System
 
-Many other commands are available in Pry; to see the full list type `help` at
-the prompt. A short description of each command is provided with basic
-instructions for use; some commands have a more extensive help that can be
-accessed via typing `command_name --help`. A command will typically say in its
-description if the `--help` option is available.
+CmdConsole provides very few commands out of the box. One exception is the
+`help` command. At the prompt type `help` to get a short description of each
+command as well as basic instructions for use each one.
 
 Contact
 -------

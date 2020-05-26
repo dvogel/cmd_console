@@ -33,5 +33,6 @@ require_relative './cmd_console/config'
 
 require 'cmd_console/cmd_console_class'
 require 'cmd_console/cmd_console_instance'
+require 'cmd_console/pager'
 
-require_relative './cmd_console/builtins/list_commands'
+require_relative './cmd_console/builtins/help'
