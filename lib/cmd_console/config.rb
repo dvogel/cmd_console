@@ -24,13 +24,6 @@ class CmdConsole
     # @return [Proc] the printer for exceptions
     attribute :exception_handler
 
-    # @return [Array] Exception that CmdConsole shouldn't rescue
-    attribute :unrescued_exceptions
-
-    # @deprecated
-    # @return [Array] Exception that CmdConsole shouldn't rescue
-    attribute :exception_whitelist
-
     # @return [Integer] The number of lines of context to show before and after
     #   exceptions
     attribute :default_window_size
@@ -41,11 +34,6 @@ class CmdConsole
     # @return [Array<Object>] the list of objects that are known to have a
     #   1-line #inspect output suitable for prompt
     attribute :prompt_safe_contexts
-
-    # A string that must precede all commands. For example, if is is
-    # set to "%", the "cd" command must be invoked as "%cd").
-    # @return [String]
-    attribute :command_prefix
 
     # @return [Boolean]
     attribute :color
@@ -81,9 +69,6 @@ class CmdConsole
 
     # @return [Boolean]
     attribute :history_load
-
-    # @return [String]
-    attribute :history_file
 
     # @return [Array<String,Regexp>]
     attribute :history_ignorelist
@@ -138,19 +123,6 @@ class CmdConsole
         print: proc{ |_output, value, pry_instance| pp(value) },
         quiet: false,
         exception_handler: CmdConsole::ExceptionHandler.method(:handle_exception),
-
-        unrescued_exceptions: [
-          ::SystemExit, ::SignalException, CmdConsole::TooSafeException
-        ],
-
-        exception_whitelist: MemoizedValue.new do
-          output.puts(
-            '[warning] CmdConsole.config.exception_whitelist is deprecated, ' \
-            'please use CmdConsole.config.unrescued_exceptions instead.'
-          )
-          unrescued_exceptions
-        end,
-
         pager: true,
         color: CmdConsole::Helpers::BaseHelpers.use_ansi_codes?,
         default_window_size: 5,
@@ -159,7 +131,6 @@ class CmdConsole
         should_load_local_rc: true,
         should_trap_interrupts: CmdConsole::Helpers::Platform.jruby?,
         disable_auto_reload: false,
-        command_prefix: '',
         collision_warning: false,
         output_prefix: '=> ',
         requires: [],
@@ -173,7 +144,6 @@ class CmdConsole
         file_completions: proc { Dir['.'] },
         history_save: true,
         history_load: true,
-        history_file: CmdConsole::History.default_file,
         history_ignorelist: [],
         history: MemoizedValue.new do
           if defined?(input::HISTORY)

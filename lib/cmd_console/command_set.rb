@@ -37,9 +37,6 @@ class CmdConsole
     # @option options [String] :listing The listing name of the
     #   command. That is the name by which the command is looked up by
     #   help and by show-source. Necessary for commands with regex matches.
-    # @option options [Boolean] :use_prefix Whether the command uses
-    #   `CmdConsole.config.command_prefix` prefix (if one is defined). Defaults
-    #   to true.
     # @option options [Boolean] :shellwords Whether the command's arguments
     #   should be split using Shellwords instead of just split on spaces.
     #   Defaults to true.

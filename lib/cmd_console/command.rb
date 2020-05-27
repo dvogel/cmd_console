@@ -81,7 +81,6 @@ class CmdConsole
           interpolate: true,
           shellwords: true,
           listing: (match.is_a?(String) ? match : match.inspect),
-          use_prefix: true,
           takes_block: false
         }
       end
@@ -151,10 +150,7 @@ class CmdConsole
       end
 
       def command_regex
-        prefix = convert_to_regex(CmdConsole.config.command_prefix)
-        prefix = "(?:#{prefix})?" unless options[:use_prefix]
-
-        /\A#{prefix}#{convert_to_regex(match)}(?!\S)/
+        /\A#{convert_to_regex(match)}(?!\S)/
       end
 
       def convert_to_regex(obj)
@@ -258,7 +254,6 @@ class CmdConsole
     # @example
     #   run "amend-line",  "5", 'puts "hello world"'
     def run(command_string, *args)
-      command_string = pry_instance.config.command_prefix.to_s + command_string
       complete_string = "#{command_string} #{args.join(' ')}".rstrip
       command_set.process_line(complete_string, context)
     end

@@ -33,6 +33,7 @@ class CmdConsole
       @original_lines = 0
       @loader = method(:read_from_file)
       @saver = method(:save_to_file)
+      @ignorelist = options[:ignorelist]
     end
 
     # Load the input history using `History.loader`.
@@ -63,7 +64,7 @@ class CmdConsole
 
       @history << line
       @history_line_count += 1
-      @saver.call(line) if !should_ignore?(line) && CmdConsole.config.history_save
+      @saver.call(line) if !should_ignore?(line)
 
       line
     end
@@ -89,27 +90,25 @@ class CmdConsole
       @history.to_a
     end
 
-    # Filter the history with the histignore options
+    # Filter the history with the ignorelist option.
     # @return [Array<String>] An array containing all the lines that are not
-    #   included in the histignore.
+    #   included in the ignorelist.
     def filter(history)
       history.select { |l| l unless should_ignore?(l) }
     end
 
     private
 
-    # Check if the line match any option in the histignore
-    # [CmdConsole.config.history_ignorelist]
+    # Check if the line match any option in the ignorelist.
     # @return [Boolean] a boolean that notifies if the line was found in the
-    #   histignore array.
+    #   ignorelist array.
     def should_ignore?(line)
-      hist_ignore = CmdConsole.config.history_ignorelist
-      return false if hist_ignore.nil? || hist_ignore.empty?
+      return false if @ignorelist.nil? || @ignorelist.empty?
 
-      hist_ignore.any? { |p| line.to_s.match(p) }
+      @ignorelist.any? { |p| line.to_s.match(p) }
     end
 
-    # The default loader. Yields lines from `CmdConsole.config.history_file`.
+    # The default loader. Yields lines from `history_file`.
     def read_from_file
       path = history_file_path
 
@@ -118,7 +117,7 @@ class CmdConsole
       warn "Unable to read history file: #{error.message}"
     end
 
-    # The default saver. Appends the given line to `CmdConsole.config.history_file`.
+    # The default saver. Appends the given line to `history_file`.
     def save_to_file(line)
       history_file.puts line if history_file
     end
@@ -141,7 +140,11 @@ class CmdConsole
     end
 
     def history_file_path
-      File.expand_path(@file_path || CmdConsole.config.history_file)
+      if @file_path
+        File.expand_path(@file_path)
+      else
+        raise "Cannot load history because the file_path was not provided."
+      end
     end
 
     def invalid_readline_line?(line)

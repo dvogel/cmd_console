@@ -15,7 +15,7 @@ class CmdConsole
         # Don't catch signals (particularly not SIGTERM) as these are unlikely
         # to be intended for pry itself. We should also make sure that
         # Kernel#exit works.
-      when *CmdConsole.config.unrescued_exceptions
+      when *CmdConsole.unrescued_exceptions
         false
         # All other exceptions will be caught.
       else

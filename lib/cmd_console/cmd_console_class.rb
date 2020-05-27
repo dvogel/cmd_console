@@ -22,15 +22,7 @@ class CmdConsole
     attr_accessor :cli
     attr_accessor :quiet
     attr_accessor :last_internal_error
-    attr_accessor :config
-
-    def_delegators(
-      :@config, :input, :input=, :output, :output=, :commands,
-      :commands=, :print, :print=, :exception_handler, :exception_handler=,
-      :color, :color=, :pager, :pager=,
-      :memory_size, :memory_size=, :extra_sticky_locals, :extra_sticky_locals=,
-      :prompt, :prompt=, :history, :history=
-    )
+    attr_accessor :unrescued_exceptions
 
     #
     # @example
@@ -62,32 +54,6 @@ class CmdConsole
   #
   def self.current
     Thread.current[:__pry__] ||= {}
-  end
-
-  # Load the given file in the context of `CmdConsole.toplevel_binding`
-  # @param [String] file The unexpanded file path.
-  def self.load_file_at_toplevel(file)
-    toplevel_binding.eval(File.read(file), file)
-  rescue RescuableException => e
-    puts "Error loading #{file}: #{e}\n#{e.backtrace.first}"
-  end
-
-  # Load RC files if appropriate This method can also be used to reload the
-  # files if they have changed.
-  def self.load_rc_files
-    rc_files_to_load.each do |file|
-      critical_section do
-        load_file_at_toplevel(file)
-      end
-    end
-  end
-
-  # Load the local RC file (./.pryrc)
-  def self.rc_files_to_load
-    files = []
-    files << CmdConsole.config.rc_file if CmdConsole.config.should_load_rc
-    files << LOCAL_RC_FILE if CmdConsole.config.should_load_local_rc
-    files.map { |file| real_path_to(file) }.compact.uniq
   end
 
   # Expand a file to its canonical name (following symlinks as appropriate)
@@ -130,10 +96,6 @@ you can add "CmdConsole.config.windows_console_warning = false" to your pryrc.
     return unless initial_session?
 
     @initial_session = false
-
-    # note these have to be loaded here rather than in _pry_ as
-    # we only want them loaded once per entire CmdConsole lifetime.
-    load_rc_files
   end
 
   def self.final_session_setup
@@ -321,7 +283,7 @@ Readline version #{Readline::VERSION} detected - will not auto_resize! correctly
     @initial_session = true
     @session_finalized = nil
 
-    self.config = CmdConsole::Config.new
+    self.unrescued_exceptions = [::SystemExit, ::SignalException, CmdConsole::TooSafeException]
     self.cli = false
     self.current_line = 1
     self.line_buffer = [""]

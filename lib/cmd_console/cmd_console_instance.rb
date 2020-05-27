@@ -78,7 +78,7 @@ class CmdConsole
     @eval_string   = ''.dup
     @backtrace     = options.delete(:backtrace) || caller
     target = options.delete(:target) || Object.new
-    @config = self.class.config.merge(options)
+    @config = Config.new.merge(options)
     @input_ring = CmdConsole::Ring.new(config.memory_size)
     @output_ring = CmdConsole::Ring.new(config.memory_size)
     @custom_completions = config.command_completions
@@ -429,7 +429,7 @@ class CmdConsole
     end
 
     ensure_correct_encoding!(line)
-    history << line unless options[:generated]
+    history << line if config.history_save && !options[:generated]
 
     @suppress_output = false
     begin
