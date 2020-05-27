@@ -67,6 +67,8 @@ class CmdConsole
         when :no_more_input
           output.puts "" if output.tty?
           break
+        when ''
+          next
         else
           output.puts "" if val.nil? && output.tty?
           return pry.exit_value unless pry.eval(val)

@@ -94,12 +94,6 @@ class CmdConsole
     # @return [Integer] how many input/output lines to keep in memory
     attribute :memory_size
 
-    # @return [Boolean]
-    attribute :auto_indent
-
-    # @return [Boolean]
-    attribute :correct_indent
-
     # @return [Boolean] whether or not display a warning when a command name
     #   collides with a method/local in the current context.
     attribute :collision_warning
@@ -166,8 +160,6 @@ class CmdConsole
         should_trap_interrupts: CmdConsole::Helpers::Platform.jruby?,
         disable_auto_reload: false,
         command_prefix: '',
-        auto_indent: CmdConsole::Helpers::BaseHelpers.use_ansi_codes?,
-        correct_indent: true,
         collision_warning: false,
         output_prefix: '=> ',
         requires: [],

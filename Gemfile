@@ -7,6 +7,7 @@ git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 group :development do
   gem "byebug"
   gem "pry-byebug"
+  gem "readline"
   gem "rspec"
 end
 

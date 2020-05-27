@@ -5,8 +5,6 @@ require 'tempfile'
 class CmdConsole
   module Helpers
     module CommandHelpers
-      include OptionsHelpers
-
       extend self
 
       # Open a temp file and yield it to the block, closing it after
@@ -16,40 +14,6 @@ class CmdConsole
         yield(file)
       ensure
         file.close(true)
-      end
-
-      def internal_binding?(context)
-        method_name = context.eval("::Kernel.__method__").to_s
-        # class_eval is here because of http://jira.codehaus.org/browse/JRUBY-6753
-        %w[__binding__ __pry__ class_eval].include?(method_name)
-        # TODO: codehaus is dead, there was no test for this and the
-        # description for the commit doesn't exist. Probably a candidate for
-        # removal so we have a chance to introduce a regression and document it
-        # properly.
-      end
-
-      def get_method_or_raise(method_name, context, opts = {})
-        method = CmdConsole::Method.from_str(method_name, context, opts)
-        if !method && method_name
-          raise CmdConsole::MethodNotFound, "method '#{method_name}' could not be found."
-        end
-
-        (opts[:super] || 0).times do
-          if method.super
-            method = method.super
-          else
-            raise CmdConsole::MethodNotFound,
-                  "'#{method.name_with_owner}' has no super method"
-          end
-        end
-
-        if !method || (!method_name && internal_binding?(context))
-          raise CmdConsole::MethodNotFound,
-                'no method name given, and context is not a method'
-        end
-
-        set_file_and_dir_locals(method.source_file)
-        method
       end
 
       # Remove any common leading whitespace from every line in `text`. This

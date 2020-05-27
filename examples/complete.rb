@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'cmd_console'
+require 'readline'
 
 history_file = File.join(File.dirname(__FILE__), 'history.txt')
 puts "Should read history from #{history_file}"

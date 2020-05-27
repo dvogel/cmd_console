@@ -36,6 +36,7 @@ class CmdConsole
         else
           display_search(args.first)
         end
+        puts
       end
 
       # Display the index view, with headings and short descriptions per command.

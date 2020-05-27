@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
+require 'delegate'
+require 'shellwords'
+
 class CmdConsole
   class Command
-    extend Helpers::DocumentationHelpers
-
     include CmdConsole::Helpers::BaseHelpers
     include CmdConsole::Helpers::CommandHelpers
     include CmdConsole::Helpers::Text

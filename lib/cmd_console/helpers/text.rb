@@ -63,56 +63,6 @@ class CmdConsole
       def default(text)
         text.to_s
       end
-
-      #
-      # @yield
-      #   Yields a block with color turned off.
-      #
-      # @return [void]
-      #
-      def no_color
-        boolean = CmdConsole.config.color
-        CmdConsole.config.color = false
-        yield
-      ensure
-        CmdConsole.config.color = boolean
-      end
-
-      #
-      # @yield
-      #   Yields a block with paging turned off.
-      #
-      # @return [void]
-      #
-      def no_pager
-        boolean = CmdConsole.config.pager
-        CmdConsole.config.pager = false
-        yield
-      ensure
-        CmdConsole.config.pager = boolean
-      end
-
-      # Returns _text_ in a numbered list, beginning at _offset_.
-      #
-      # @param  [#each_line] text
-      # @param  [Fixnum] offset
-      # @return [String]
-      def with_line_numbers(text, offset, color = :blue)
-        lines = text.each_line.to_a
-        max_width = (offset + lines.count).to_s.length
-        lines.each_with_index.map do |line, index|
-          adjusted_index = (index + offset).to_s.rjust(max_width)
-          "#{send(color, adjusted_index)}: #{line}"
-        end.join
-      end
-
-      # Returns _text_ indented by _chars_ spaces.
-      #
-      # @param [String] text
-      # @param [Fixnum] chars
-      def indent(text, chars)
-        text.lines.map { |l| "#{' ' * chars}#{l}" }.join
-      end
     end
   end
 end
