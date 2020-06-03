@@ -296,21 +296,6 @@ class CmdConsole
       end
     end
 
-    # Display a warning if a command collides with a local/method in
-    # the current scope.
-    def check_for_command_collision(command_match, arg_string)
-      collision_type = target.eval("defined?(#{command_match})")
-      collision_type ||= 'local-variable' if arg_string =~ %r{\A\s*[-+*/%&|^]*=}
-
-      if collision_type
-        output.puts(
-          "#{Helpers::Text.bold('WARNING:')} Calling CmdConsole command '#{command_match}', " \
-          "which conflicts with a #{collision_type}.\n\n"
-        )
-      end
-    rescue CmdConsole::RescuableException # rubocop:disable Lint/HandleExceptions
-    end
-
     # Extract necessary information from a line that Command.matches? this
     # command.
     #
@@ -365,10 +350,6 @@ class CmdConsole
     # @return [Object, Command::VOID_VALUE]
     def process_line(line)
       command_match, arg_string, captures, args = tokenize(line)
-
-      if CmdConsole.config.collision_warning
-        check_for_command_collision(command_match, arg_string)
-      end
 
       self.arg_string = arg_string
       self.captures = captures

@@ -20,7 +20,6 @@ class CmdConsole
     attr_accessor :line_buffer
     attr_accessor :eval_path
     attr_accessor :cli
-    attr_accessor :quiet
     attr_accessor :last_internal_error
     attr_accessor :unrescued_exceptions
 
@@ -41,14 +40,6 @@ class CmdConsole
   end
 
   #
-  # @return [main]
-  #   returns the special instance of Object, "main".
-  #
-  def self.main
-    @main ||= TOPLEVEL_BINDING.eval "self"
-  end
-
-  #
   # @return [CmdConsole::Config]
   #  Returns a value store for an instance of CmdConsole running on the current thread.
   #
@@ -63,17 +54,12 @@ class CmdConsole
     nil
   end
 
-  # Load any Ruby files specified with the -r flag on the command line.
-  def self.load_requires
-    CmdConsole.config.requires.each do |file|
-      require file
-    end
-  end
-
   # Trap interrupts on jruby, and make them behave like MRI so we can
   # catch them.
   def self.load_traps
-    trap('INT') { raise Interrupt }
+    if CmdConsole::Helpers::Platform.jruby?
+      trap('INT') { raise Interrupt }
+    end
   end
 
   def self.load_win32console
@@ -102,105 +88,8 @@ you can add "CmdConsole.config.windows_console_warning = false" to your pryrc.
     return if @session_finalized
 
     @session_finalized = true
-    load_requires if CmdConsole.config.should_load_requires
     load_history if CmdConsole.config.history_load
-    load_traps if CmdConsole.config.should_trap_interrupts
     load_win32console if Helpers::Platform.windows? && !Helpers::Platform.windows_ansi?
-  end
-
-  # Start a CmdConsole REPL.
-  # This method also loads `pryrc` as necessary the first time it is invoked.
-  # @param [Object, Binding] target The receiver of the CmdConsole session
-  # @param [Hash] options
-  # @option options (see CmdConsole#initialize)
-  # @example
-  #   CmdConsole.start(Object.new, :input => MyInput.new)
-  def self.start(target = nil, options = {})
-    return if CmdConsole::Env['DISABLE_PRY']
-    if CmdConsole::Env['FAIL_PRY']
-      raise 'You have FAIL_PRY set to true, which results in CmdConsole calls failing'
-    end
-
-    options = options.to_hash
-
-    if in_critical_section?
-      output.puts "ERROR: CmdConsole started inside CmdConsole."
-      output.puts "This can happen if you have a binding.pry inside a #to_s " \
-                  "or #inspect function."
-      return
-    end
-
-    options[:target] = CmdConsole.binding_for(target || toplevel_binding)
-    initial_session_setup
-    final_session_setup
-
-    # Unless we were given a backtrace, save the current one
-    if options[:backtrace].nil?
-      options[:backtrace] = caller
-
-      # If CmdConsole was started via `binding.pry`, elide that from the backtrace
-      if options[:backtrace].first =~ /pry.*core_extensions.*pry/
-        options[:backtrace].shift
-      end
-    end
-
-    driver = options[:driver] || CmdConsole::REPL
-
-    # Enter the matrix
-    driver.start(options)
-  rescue CmdConsole::TooSafeException
-    puts "ERROR: CmdConsole cannot work with $SAFE > 0"
-    raise
-  end
-
-  # Execute the file through the REPL loop, non-interactively.
-  # @param [String] file_name File name to load through the REPL.
-  def self.load_file_through_repl(file_name)
-    REPLFileLoader.new(file_name).load
-  end
-
-  #
-  # An inspector that clips the output to `max_length` chars.
-  # In case of > `max_length` chars the `#<Object...> notation is used.
-  #
-  # @param [Object] obj
-  #   The object to view.
-  #
-  # @param [Hash] options
-  # @option options [Integer] :max_length (60)
-  #   The maximum number of chars before clipping occurs.
-  #
-  # @option options [Boolean] :id (false)
-  #   Boolean to indicate whether or not a hex reprsentation of the object ID
-  #   is attached to the return value when the length of inspect is greater than
-  #   value of `:max_length`.
-  #
-  # @return [String]
-  #   The string representation of `obj`.
-  #
-  def self.view_clip(obj, options = {})
-    max = options.fetch :max_length, 60
-    id = options.fetch :id, false
-    if obj.is_a?(Module) && obj.name.to_s != "" && obj.name.to_s.length <= max
-      obj.name.to_s
-    elsif CmdConsole.main == obj
-      # Special-case to support jruby. Fixed as of:
-      # https://github.com/jruby/jruby/commit/d365ebd309cf9df3dde28f5eb36ea97056e0c039
-      # we can drop in the future.
-      obj.to_s
-      # rubocop:disable Style/CaseEquality
-    elsif CmdConsole.config.prompt_safe_contexts.any? { |v| v === obj } &&
-          obj.inspect.length <= max
-      # rubocop:enable Style/CaseEquality
-
-      obj.inspect
-    elsif id
-      format("#<#{obj.class}:0x%<id>x>", id: obj.object_id << 1)
-    else
-      "#<#{obj.class}>"
-    end
-  rescue RescuableException
-    "unknown"
   end
 
   # Load Readline history if required.
@@ -212,39 +101,6 @@ you can add "CmdConsole.config.windows_console_warning = false" to your pryrc.
   #   been started since loading the CmdConsole class.
   def self.initial_session?
     @initial_session
-  end
-
-  # Run a CmdConsole command from outside a session. The commands available are
-  # those referenced by `CmdConsole.config.commands` (the default command set).
-  # @param [String] command_string The CmdConsole command (including arguments,
-  #   if any).
-  # @param [Hash] options Optional named parameters.
-  # @return [nil]
-  # @option options [Object, Binding] :target The object to run the
-  #   command under. Defaults to `TOPLEVEL_BINDING` (main).
-  # @option options [Boolean] :show_output Whether to show command
-  #   output. Defaults to true.
-  # @example Run at top-level with no output.
-  #   CmdConsole.run_command "ls"
-  # @example Run under CmdConsole class, returning only public methods.
-  #   CmdConsole.run_command "ls -m", :target => CmdConsole
-  # @example Display command output.
-  #   CmdConsole.run_command "ls -av", :show_output => true
-  def self.run_command(command_string, options = {})
-    options = {
-      target: TOPLEVEL_BINDING,
-      show_output: true,
-      output: CmdConsole.config.output,
-      commands: CmdConsole.config.commands
-    }.merge!(options)
-
-    # :context for compatibility with <= 0.9.11.4
-    target = options[:context] || options[:target]
-    output = options[:show_output] ? options[:output] : StringIO.new
-
-    pry = CmdConsole.new(output: output, target: target, commands: options[:commands])
-    pry.eval command_string
-    nil
   end
 
   def self.auto_resize!
@@ -293,39 +149,6 @@ Readline version #{Readline::VERSION} detected - will not auto_resize! correctly
   # Basic initialization.
   def self.init
     reset_defaults
-  end
-
-  # Return a `Binding` object for `target` or return `target` if it is
-  # already a `Binding`.
-  # In the case where `target` is top-level then return `TOPLEVEL_BINDING`
-  # @param [Object] target The object to get a `Binding` object for.
-  # @return [Binding] The `Binding` object.
-  def self.binding_for(target)
-    return target if Binding === target # rubocop:disable Style/CaseEquality
-    return TOPLEVEL_BINDING if CmdConsole.main == target
-
-    target.__binding__
-  end
-
-  def self.toplevel_binding
-    unless defined?(@toplevel_binding) && @toplevel_binding
-      # Grab a copy of the TOPLEVEL_BINDING without any local variables.
-      # This binding has a default definee of Object, and new methods are
-      # private (just as in TOPLEVEL_BINDING).
-      TOPLEVEL_BINDING.eval <<-RUBY
-        def self.__pry__
-          binding
-        end
-        CmdConsole.toplevel_binding = __pry__
-        class << self; undef __pry__; end
-      RUBY
-    end
-    @toplevel_binding.eval('private')
-    @toplevel_binding
-  end
-
-  class << self
-    attr_writer :toplevel_binding
   end
 
   def self.in_critical_section?

@@ -52,7 +52,7 @@ class CmdConsole
     :@config, :input, :input=, :output, :output=, :commands,
     :commands=, :print, :print=, :exception_handler, :exception_handler=,
     :color, :color=, :pager, :pager=,
-    :memory_size, :memory_size=, :extra_sticky_locals, :extra_sticky_locals=,
+    :memory_size, :memory_size=,
     :prompt, :prompt=, :history, :history=,
   )
 
@@ -68,8 +68,6 @@ class CmdConsole
   #   The object to use for commands.
   # @option options [Proc] :print
   #   The Proc to use for printing return values.
-  # @option options [Boolean] :quiet
-  #   Omit the `whereami` banner when starting.
   # @option options [Array<String>] :backtrace
   #   The backtrace of the session's `binding.pry` line, if applicable.
   # @option options [Object] :target
@@ -144,28 +142,6 @@ class CmdConsole
   def memory_size=(size)
     @input_ring = CmdConsole::Ring.new(size)
     @output_ring = CmdConsole::Ring.new(size)
-  end
-
-  # Add a sticky local to this CmdConsole instance.
-  # A sticky local is a local that persists between all bindings in a session.
-  # @param [Symbol] name The name of the sticky local.
-  # @yield The block that defines the content of the local. The local
-  #   will be refreshed at each tick of the repl loop.
-  def add_sticky_local(name, &block)
-    config.extra_sticky_locals[name] = block
-  end
-
-  def sticky_locals
-    {
-      _in_: input_ring,
-      _out_: output_ring,
-      pry_instance: self,
-      _ex_: last_exception && last_exception.wrapped_exception,
-      _file_: last_file,
-      _dir_: last_dir,
-      _: proc { last_result },
-      __: proc { output_ring[-2] }
-    }.merge(config.extra_sticky_locals)
   end
 
   # Reset the current eval string. If the user has entered part of a multiline
@@ -412,12 +388,6 @@ class CmdConsole
 
   def raise_up!(*args)
     raise_up_common(true, *args)
-  end
-
-  # Convenience accessor for the `quiet` config key.
-  # @return [Boolean]
-  def quiet?
-    config.quiet
   end
 
   private

@@ -41,26 +41,6 @@ class CmdConsole
     # @return [Boolean]
     attribute :pager
 
-    # @return [Boolean] whether the global ~/.pryrc should be loaded
-    attribute :should_load_rc
-
-    # @return [Boolean] whether the local ./.pryrc should be loaded
-    attribute :should_load_local_rc
-
-    # @return [Boolean]
-    attribute :should_load_plugins
-
-    # @return [Boolean] whether to load files specified with the -r flag
-    attribute :should_load_requires
-
-    # @return [Boolean] whether to disable edit-method's auto-reloading behavior
-    attribute :disable_auto_reload
-
-    # Whether CmdConsole should trap SIGINT and cause it to raise an Interrupt
-    # exception. This is only useful on JRuby, MRI does this for us.
-    # @return [Boolean]
-    attribute :should_trap_interrupts
-
     # @return [CmdConsole::History]
     attribute :history
 
@@ -79,16 +59,6 @@ class CmdConsole
     # @return [Integer] how many input/output lines to keep in memory
     attribute :memory_size
 
-    # @return [Boolean] whether or not display a warning when a command name
-    #   collides with a method/local in the current context.
-    attribute :collision_warning
-
-    # @return [Hash{Symbol=>Proc}]
-    attribute :extra_sticky_locals
-
-    # @return [Boolean] suppresses whereami output on `binding.pry`
-    attribute :quiet
-
     # @return [Boolean] displays a warning about experience improvement on
     #   Windows
     attribute :windows_console_warning
@@ -96,22 +66,12 @@ class CmdConsole
     # @return [Proc]
     attribute :command_completions
 
-    # @return [Proc]
-    attribute :file_completions
-
     # @return [Hash]
     attribute :ls
 
     # @return [String] a line of code to execute in context before the session
     #   starts
     attribute :exec_string
-
-    # @return [String]
-    attribute :output_prefix
-
-    # @return [String]
-    # @since v0.13.0
-    attribute :rc_file
 
     def initialize
       merge!(
@@ -121,27 +81,15 @@ class CmdConsole
         prompt: "> ",
         prompt_safe_contexts: [String, Numeric, Symbol, nil, true, false],
         print: proc{ |_output, value, pry_instance| pp(value) },
-        quiet: false,
         exception_handler: CmdConsole::ExceptionHandler.method(:handle_exception),
         pager: true,
         color: CmdConsole::Helpers::BaseHelpers.use_ansi_codes?,
         default_window_size: 5,
-        rc_file: default_rc_file,
-        should_load_rc: true,
-        should_load_local_rc: true,
-        should_trap_interrupts: CmdConsole::Helpers::Platform.jruby?,
-        disable_auto_reload: false,
-        collision_warning: false,
-        output_prefix: '=> ',
         requires: [],
-        should_load_requires: true,
-        should_load_plugins: true,
         windows_console_warning: true,
         control_d_handler: CmdConsole::ControlDHandler.method(:default),
         memory_size: 100,
-        extra_sticky_locals: {},
         command_completions: proc { commands.keys },
-        file_completions: proc { Dir['.'] },
         history_save: true,
         history_load: true,
         history_ignorelist: [],
@@ -238,20 +186,6 @@ class CmdConsole
         " * Use the pry-coolline gem, a pure-ruby alternative to Readline"
       )
       raise
-    end
-
-    def default_rc_file
-      if (pryrc = CmdConsole::Env['PRYRC'])
-        pryrc
-      elsif (xdg_home = CmdConsole::Env['XDG_CONFIG_HOME'])
-        # See XDG Base Directory Specification at
-        # https://standards.freedesktop.org/basedir-spec/basedir-spec-0.8.html
-        xdg_home + '/pry/pryrc'
-      elsif File.exist?(File.expand_path('~/.pryrc'))
-        '~/.pryrc'
-      else
-        '~/.config/pry/pryrc'
-      end
     end
   end
 end
