@@ -44,4 +44,7 @@ Gem::Specification.new do |s|
     "lib/cmd_console/config.rb",
   ]
   s.require_paths = ["lib"]
+  s.add_dependency 'method_source', '~> 1.1.0'
+  s.add_dependency 'readline', '~> 0.0.4'
+  s.add_dependency 'ostruct', '~> 0.6.1'
 end
